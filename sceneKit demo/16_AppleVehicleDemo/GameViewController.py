@@ -8,6 +8,7 @@ This script needs the Gestures module from
 https://github.com/mikaelho/pythonista-gestures
 '''
 from objc_util import *
+from ctypes import Structure, c_double
 import sceneKit as scn
 import ui
 import motion
@@ -23,6 +24,9 @@ M_PI_4 = math.pi/4
 
 scn.clearCache()
 
+class CMAcceleration (Structure):
+  _fields_ = [('x', c_double), ('y', c_double), ('z', c_double)]
+  
 class GameViewController:
   
   @classmethod
@@ -474,13 +478,9 @@ class GameViewController:
     engineForce = 0
     brakingForce = 0
     
-    accelerometer = motion.get_gravity()
-    if accelerometer[0] > 0:
-      self.myOrientation = accelerometer[1] * 1.3
-    else:
-      self.myOrientation = -accelerometer[1] * 1.3
+    accelerometer = gyro_data.acceleration(argtypes=[], restype=CMAcceleration)
       
-    orientation = self.myOrientation
+    orientation = accelerometer.x
     
     #drive: 1 touch = accelerate, 2 touches = backward, 3 touches = brake
     if self.touchCount == 1:
@@ -629,7 +629,8 @@ class GameViewController:
     self.ticks = 0
     
   def shutDown(self):
-    motion.stop_updates()
+    self.mgr.stopAccelerometerUpdates()
+    self.mgr.release()	  
     self.g.remove_all_gestures(self.main_view)
     self.myCameraNode.removeAllActions()
     self.pipeNode.removeAllParticleSystems()
